@@ -4,14 +4,34 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SpecialDiretoryUtility;
 
 namespace MonFileCopy
 {
     class Program
     {
+        public static string desktopPath = string.Empty;
+        public static string destPath = string.Empty;
+        public static string watchPath = string.Empty;
         static void Main(string[] args)
         {
-            var watcher = new FileSystemWatcher(@"C:\Users\221Q-FC\Desktop\Share");
+            string[] arguments = Environment.GetCommandLineArgs();
+            if(args.Length != 2)
+            {
+                Console.WriteLine("Arguments Error, Usage: MonFileCopy.exe watchDir destDir");
+                return;
+            }
+            //desktopPath = GetCurrentDesktopPath();
+            //Console.WriteLine(desktopPath);
+            //watchPath = desktopPath + @"\Share";
+            //watchPath = @"\\192.168.5.130\Share";
+            watchPath = arguments[1];
+            //Console.WriteLine(arguments[0]);
+            //Console.WriteLine(arguments[1]);
+            //return;
+            destPath = arguments[2];
+            //destPath = desktopPath + @"\test";
+            var watcher = new FileSystemWatcher(watchPath);
 
             watcher.NotifyFilter = NotifyFilters.Attributes
                                  | NotifyFilters.CreationTime
@@ -36,18 +56,43 @@ namespace MonFileCopy
             Console.ReadLine();
         }
 
+        private static void CopyFiles(string strSrcDir, string strDestDir)
+        {
+            string[] files = Directory.GetFiles(strSrcDir);
+            string fileName = string.Empty;
+            string destFileName = string.Empty;
+            foreach(string file in files)
+            {
+                fileName = Path.GetFileName(file);
+                destFileName = destPath + @"\" + fileName;
+                if (fileName.EndsWith("exe") || fileName.EndsWith("pdb"))
+                {
+                    File.Copy(file, destFileName, true);
+                }
+            }
+        }
+
+        private static string GetCurrentDesktopPath()
+        {
+            string path = SpecialDiretory.GetDesktopPath();
+            return path;
+        }
+
         private static void OnChanged(object sender, FileSystemEventArgs e)
         {
             if (e.ChangeType != WatcherChangeTypes.Changed)
             {
                 return;
             }
+
+            CopyFiles(watchPath, destPath);
             Console.WriteLine($"Changed: {e.FullPath}");
         }
 
         private static void OnCreated(object sender, FileSystemEventArgs e)
         {
             string value = $"Created: {e.FullPath}";
+            CopyFiles(watchPath, destPath);
             Console.WriteLine(value);
         }
 
